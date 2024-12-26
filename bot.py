@@ -5,15 +5,17 @@ import betterlogging as bl
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
+from aiohttp import web
 
 from tgbot.config import load_config, Config
 from tgbot.handlers import routers_list
 from tgbot.middlewares.config import ConfigMiddleware
 from tgbot.services import broadcaster
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 
 async def on_startup(bot: Bot, admin_ids: list[int]):
-    await broadcaster.broadcast(bot, admin_ids, "Бот був запущений")
+    await broadcaster.broadcast(bot, admin_ids, "Бот запущено!")
 
 
 def register_global_middlewares(dp: Dispatcher, config: Config, session_pool=None):
@@ -83,25 +85,74 @@ def get_storage(config):
         return MemoryStorage()
 
 
+# async def main():
+#     setup_logging()
+#
+#     config = load_config(".env")
+#     storage = get_storage(config)
+#
+#     bot = Bot(token=config.tg_bot.token)
+#     dp = Dispatcher(storage=storage)
+#
+#     dp.include_routers(*routers_list)
+#
+#     register_global_middlewares(dp, config)
+#
+#     await on_startup(bot, config.tg_bot.admin_ids)
+#     await dp.start_polling(bot)
 async def main():
     setup_logging()
 
     config = load_config(".env")
     storage = get_storage(config)
 
-    bot = Bot(token=config.tg_bot.token, parse_mode="HTML")
+    # Initialize bot and dispatcher
+    bot = Bot(token=config.tg_bot.token)
     dp = Dispatcher(storage=storage)
 
     dp.include_routers(*routers_list)
-
     register_global_middlewares(dp, config)
 
+    # Create aiohttp web application
+    app = web.Application()
+
+    # Create a webhook handler
+    webhook_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+        secret_token='your_secret_token'  # Put this in your config
+    )
+
+    # Set up the webhook handler to handle Telegram updates
+    webhook_handler.register(app, path='/webhook-path')  # The path where Telegram will send updates
+
+    # Set webhook URL for Telegram
+    await bot.set_webhook(
+        url=f'https://your-domain.com/webhook-path',  # Replace with your domain
+        secret_token='your_secret_token',
+        drop_pending_updates=True  # Optional: drop pending updates
+    )
+
+    # Start up notification
     await on_startup(bot, config.tg_bot.admin_ids)
-    await dp.start_polling(bot)
+
+    # Set up aiohttp routes for other purposes if needed
+    setup_application(app, dp, bot=bot)
+
+    # Start web server
+    return app
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
-        asyncio.run(main())
+        # Create web application
+        app = asyncio.run(main())
+
+        # Run web server
+        web.run_app(
+            app,
+            host='0.0.0.0',  # Listen on all available interfaces
+            port=8080  # Choose your port
+        )
     except (KeyboardInterrupt, SystemExit):
-        logging.error("Бот був вимкнений!")
+        logging.error("Бот не запущен!")
