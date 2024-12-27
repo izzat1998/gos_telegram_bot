@@ -106,64 +106,48 @@ async def main():
     config = load_config(".env")
     storage = get_storage(config)
 
+    # Initialize bot and dispatcher
     bot = Bot(token=config.tg_bot.token)
     dp = Dispatcher(storage=storage)
-
-    app = web.Application()
 
     dp.include_routers(*routers_list)
     register_global_middlewares(dp, config)
 
-    # Add this route for testing
-    async def handle_test(request):
-        return web.Response(text="Bot webhook is working!")
+    # Create aiohttp web application
+    app = web.Application()
 
-    app.router.add_get('/test', handle_test)
-
-    # Create webhook handler with debug logging
-    async def handle_webhook_update(request):
-        logging.info(f"Received webhook request: {request.method} {request.path}")
-        try:
-            data = await request.json()
-            logging.info(f"Webhook data: {data}")
-        except Exception as e:
-            logging.error(f"Error parsing webhook data: {e}")
-        return web.Response(text="ok")
-
-    app.router.add_post('/bot', handle_webhook_update)
-
+    # Create a webhook handler
     webhook_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
         secret_token='your_secret_token'
     )
 
+    # Set up the webhook handler
     webhook_handler.register(app, path='/bot')
+
+    # Set up aiohttp routes
     setup_application(app, dp, bot=bot)
 
-    # Set webhook
+    # Set webhook URL
     await bot.set_webhook(
         url='https://bot.khamraev.uz/bot',
         secret_token='your_secret_token',
         drop_pending_updates=True
     )
 
+    # Start up notification
     await on_startup(bot, config.tg_bot.admin_ids)
+
     return app
 
-
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
+    # Get the application
+    app = asyncio.run(main())
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    app = loop.run_until_complete(main())
-
+    # Run app
     web.run_app(
         app,
-        host='0.0.0.0',
+        host='localhost',
         port=8080
     )
