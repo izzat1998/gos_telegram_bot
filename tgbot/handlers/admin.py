@@ -48,8 +48,72 @@ async def back_to_statistics(callback_query: CallbackQuery, state: FSMContext):
         await callback_query.answer("Cannot process this action")
         return
 
-    await get_order_statistics(callback_query.message, state)
-    await callback_query.answer()
+    api_client = APIClient()
+    try:
+        statistics = await api_client.get_order_statistics()
+        status_dist = statistics["status_distribution"]
+        finance = statistics["finance_stats"]
+        status_counts = {item["status"]: item["count"] for item in status_dist}
+
+        response = (
+            "📈 <b>Финансовая статистика</b>\n"
+            f"💰 Общая выручка: {finance['total_revenue']}$\n"
+            f"📦 Всего заказов: {finance['total_orders']}\n"
+            f"💎 Средний чек: {finance['avg_order_value']}$\n\n"
+        )
+
+        inline_buttons = [
+            [
+                InlineKeyboardButton(
+                    text=f"✅ Подтверждено: {status_counts['approved']}",
+                    callback_data="approved",
+                ),
+                InlineKeyboardButton(
+                    text=f"❌ Отменено: {status_counts['cancelled']}",
+                    callback_data="cancelled",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"⭐ Завершено: {status_counts['completed']}",
+                    callback_data="completed",
+                ),
+                InlineKeyboardButton(
+                    text=f"🏭 В производстве: {status_counts['in_production']}",
+                    callback_data="in_production",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"🔨 Установка: {status_counts['installation_in_progress']}",
+                    callback_data="installation_in_progress",
+                ),
+                InlineKeyboardButton(
+                    text=f"👀 На рассмотрении: {status_counts['pending_review']}",
+                    callback_data="pending_review",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"📦 Готово к установке: {status_counts['ready_for_installation']}",
+                    callback_data="ready_for_installation",
+                ),
+                InlineKeyboardButton(
+                    text=f"👷 Назначен работник: {status_counts['worker_assigned']}",
+                    callback_data="worker_assigned",
+                ),
+            ],
+        ]
+
+        inline_keyboard = InlineKeyboardMarkup(inline_keyboard=inline_buttons)
+        await state.set_state(OrderStatistics.list_by_status)
+        await callback_query.message.edit_text(
+            response, parse_mode="HTML", reply_markup=inline_keyboard
+        )
+        await callback_query.answer()
+
+    except Exception as e:
+        await callback_query.message.edit_text(f"Error: {str(e)}")
 
 
 @admin_router.message(F.text == "📊 Статистика заказов")
