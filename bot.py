@@ -139,15 +139,28 @@ async def main():
     # Start up notification
     await on_startup(bot, config.tg_bot.admin_ids)
 
-    return app
+    return app, bot, dp
 
-if __name__ == '__main__':
-    # Get the application
-    app = asyncio.run(main())
 
-    # Run app
+def main_webhook():
+    # Create application
+    logging.basicConfig(level=logging.INFO)
+
+    # Create new event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    # Create app and run startup
+    app, bot, dp = loop.run_until_complete(main())
+
+    # Setup web routes
     web.run_app(
         app,
         host='localhost',
-        port=8080
+        port=8080,
+        loop=loop
     )
+
+
+if __name__ == '__main__':
+    main_webhook()
