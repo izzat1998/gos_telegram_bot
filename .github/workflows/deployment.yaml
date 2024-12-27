@@ -1,0 +1,46 @@
+name: Django CI/CD
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+
+          pip install bandit safety pre-commit ruff
+
+
+      - name: Run Security Checks
+        run: |
+          bandit -r . -ll -x ./tests,./venv
+          safety check
+  deploy:
+    environment:
+      name: deployment
+    needs: [security ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Ubuntu Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /var/www/gos_telegram_bot
+            git pull origin master
+            systemctl restart bot.service
