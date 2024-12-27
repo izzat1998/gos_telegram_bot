@@ -120,39 +120,38 @@ async def main():
     webhook_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
-        secret_token='your_secret_token'  # Put this in your config
+        secret_token='your_secret_token'
     )
 
-    # Set up the webhook handler to handle Telegram updates
-    webhook_handler.register(app, path='/bot')  # The path where Telegram will send updates
+    # Set up the webhook handler
+    webhook_handler.register(app, path='/bot')
 
-    # Set webhook URL for Telegram
+    # Set up aiohttp routes
+    setup_application(app, dp, bot=bot)
+
+    # Set webhook URL
     await bot.set_webhook(
-        url=f'https://bot.khamraev.uz/bot',  # Replace with your domain
+        url='https://bot.khamraev.uz/bot',
         secret_token='your_secret_token',
-        drop_pending_updates=True  # Optional: drop pending updates
+        drop_pending_updates=True
     )
 
     # Start up notification
     await on_startup(bot, config.tg_bot.admin_ids)
 
-    # Set up aiohttp routes for other purposes if needed
-    setup_application(app, dp, bot=bot)
-
-    # Start web server
     return app
 
 
 if __name__ == '__main__':
-    try:
-        # Create web application
-        app = asyncio.run(main())
+    # Create application
+    app = web.Application()
 
-        # Run web server
-        web.run_app(
-            app,
-            host='0.0.0.0',  # Listen on all available interfaces
-            port=8080  # Choose your port
-        )
-    except (KeyboardInterrupt, SystemExit):
-        logging.error("Бот не запущен!")
+    # Setup application
+    asyncio.run(main())
+
+    # Run app
+    web.run_app(
+        app,
+        host='0.0.0.0',
+        port=8080
+    )

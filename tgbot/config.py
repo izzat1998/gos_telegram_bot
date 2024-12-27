@@ -172,6 +172,16 @@ class Config:
     redis: Optional[RedisConfig] = None
 
 
+@dataclass
+class WebhookConfig:
+    host: str = "0.0.0.0"
+    port: int = 8080
+    path: str = "/bot"
+    url: str = "https://bot.khamraev.uz/bot"
+    secret_token: str = "your_secret_token"
+
+
+
 def load_config(path: str = None) -> Config:
     """
     This function takes an optional file path as input and returns a Config object.
