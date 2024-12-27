@@ -124,11 +124,11 @@ async def main():
     )
 
     # Set up the webhook handler to handle Telegram updates
-    webhook_handler.register(app, path='/webhook-path')  # The path where Telegram will send updates
+    webhook_handler.register(app, path='/bot')  # The path where Telegram will send updates
 
     # Set webhook URL for Telegram
     await bot.set_webhook(
-        url=f'https://your-domain.com/webhook-path',  # Replace with your domain
+        url=f'https://bot.khamraev.uz/bot',  # Replace with your domain
         secret_token='your_secret_token',
         drop_pending_updates=True  # Optional: drop pending updates
     )
