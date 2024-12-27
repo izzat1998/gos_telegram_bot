@@ -15,6 +15,7 @@ from tgbot.services import broadcaster
 
 
 async def on_startup(bot: Bot, admin_ids: list[str | int]):
+
     await broadcaster.broadcast(bot, admin_ids, "Бот запущено!")
 
 
