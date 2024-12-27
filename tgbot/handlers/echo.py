@@ -1,5 +1,4 @@
-from aiogram import types, Router, F
-from aiogram.filters import StateFilter
+from aiogram import Router
 
 echo_router = Router()
 

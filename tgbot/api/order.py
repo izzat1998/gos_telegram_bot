@@ -17,10 +17,13 @@ class APIClient:
         try:
             params = {"page": page} if page > 1 else {}
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.url}api/orders/status/{order_status}/", params=params) as response:
+                async with session.get(
+                    f"{self.url}api/orders/status/{order_status}/", params=params
+                ) as response:
                     return await response.json()
         except Exception as e:
             return {"error": str(e)}
+
     async def get_order_detail(self, order_id):
         try:
             async with aiohttp.ClientSession() as session:

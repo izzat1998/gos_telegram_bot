@@ -144,7 +144,7 @@ class Miscellaneous:
         A string used to hold other various parameters as required (default is None).
     """
 
-    other_params: str = None
+    other_params: Optional[str] = None
 
 
 @dataclass
@@ -181,8 +181,7 @@ class WebhookConfig:
     secret_token: str = "your_secret_token"
 
 
-
-def load_config(path: str = None) -> Config:
+def load_config(path: Optional[str] = None) -> Config:
     """
     This function takes an optional file path as input and returns a Config object.
     :param path: The path of env file from where to load the configuration variables.

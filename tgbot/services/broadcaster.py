@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Union
+from typing import Union, Optional
 
 from aiogram import Bot
 from aiogram import exceptions
@@ -12,7 +12,7 @@ async def send_message(
     user_id: Union[int, str],
     text: str,
     disable_notification: bool = False,
-    reply_markup: InlineKeyboardMarkup = None,
+    reply_markup: Optional[InlineKeyboardMarkup] = None,
 ) -> bool:
     """
     Safe messages sender
@@ -31,7 +31,7 @@ async def send_message(
             disable_notification=disable_notification,
             reply_markup=reply_markup,
         )
-    except exceptions.TelegramBadRequest as e:
+    except exceptions.TelegramBadRequest:
         logging.error("Telegram server says - Bad Request: chat not found")
     except exceptions.TelegramForbiddenError:
         logging.error(f"Target [ID:{user_id}]: got TelegramForbiddenError")
@@ -56,7 +56,7 @@ async def broadcast(
     users: list[Union[str, int]],
     text: str,
     disable_notification: bool = False,
-    reply_markup: InlineKeyboardMarkup = None,
+    reply_markup: Optional[InlineKeyboardMarkup] = None,
 ) -> int:
     """
     Simple broadcaster.

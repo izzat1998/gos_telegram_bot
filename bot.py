@@ -5,16 +5,16 @@ import betterlogging as bl
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
 from tgbot.config import load_config, Config
 from tgbot.handlers import routers_list
 from tgbot.middlewares.config import ConfigMiddleware
 from tgbot.services import broadcaster
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 
-async def on_startup(bot: Bot, admin_ids: list[int]):
+async def on_startup(bot: Bot, admin_ids: list[str | int]):
     await broadcaster.broadcast(bot, admin_ids, "Бот запущено!")
 
 
@@ -118,22 +118,20 @@ async def main():
 
     # Create a webhook handler
     webhook_handler = SimpleRequestHandler(
-        dispatcher=dp,
-        bot=bot,
-        secret_token='your_secret_token'
+        dispatcher=dp, bot=bot, secret_token="your_secret_token"
     )
 
     # Set up the webhook handler
-    webhook_handler.register(app, path='/bot')
+    webhook_handler.register(app, path="/bot")
 
     # Set up aiohttp routes
     setup_application(app, dp, bot=bot)
 
     # Set webhook URL
     await bot.set_webhook(
-        url='https://bot.khamraev.uz/bot',
-        secret_token='your_secret_token',
-        drop_pending_updates=True
+        url="https://bot.khamraev.uz/bot",
+        secret_token="your_secret_token",
+        drop_pending_updates=True,
     )
 
     # Start up notification
@@ -154,13 +152,8 @@ def main_webhook():
     app, bot, dp = loop.run_until_complete(main())
 
     # Setup web routes
-    web.run_app(
-        app,
-        host='localhost',
-        port=8080,
-        loop=loop
-    )
+    web.run_app(app, host="localhost", port=8080, loop=loop)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main_webhook()
