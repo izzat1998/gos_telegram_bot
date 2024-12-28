@@ -1,72 +1,152 @@
+from typing import Dict, List
+
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 # This is a simple keyboard, that contains 2 buttons
-def very_simple_keyboard():
+def create_pagination_keyboard(
+    current_page: int,
+    total_pages: int,
+    prefix: str
+) -> InlineKeyboardMarkup:
+    """Create pagination keyboard for lists."""
+    buttons = []
+    row = []
+
+    if current_page > 1:
+        row.append(
+            InlineKeyboardButton(
+                text="⬅️ Предыдущая",
+                callback_data=f"{prefix}:prev:{current_page - 1}"
+            )
+        )
+
+    row.append(
+        InlineKeyboardButton(
+            text=f"📄 {current_page}/{total_pages}",
+            callback_data="current_page"
+        )
+    )
+
+    if current_page < total_pages:
+        row.append(
+            InlineKeyboardButton(
+                text="➡️ Следующая",
+                callback_data=f"{prefix}:next:{current_page + 1}"
+            )
+        )
+
+    buttons.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def create_statistics_keyboard(status_counts: Dict[str, int]) -> InlineKeyboardMarkup:
+    """Create keyboard for order statistics."""
     buttons = [
         [
             InlineKeyboardButton(
-                text="📝 Створити замовлення", callback_data="create_order"
+                text=f"✅ Подтверждено: {status_counts['approved']}",
+                callback_data="approved"
             ),
-            InlineKeyboardButton(text="📋 Мої замовлення", callback_data="my_orders"),
+            InlineKeyboardButton(
+                text=f"❌ Отменено: {status_counts['cancelled']}",
+                callback_data="cancelled"
+            )
         ],
+        [
+            InlineKeyboardButton(
+                text=f"⭐ Завершено: {status_counts['completed']}",
+                callback_data="completed"
+            ),
+            InlineKeyboardButton(
+                text=f"🏭 В производстве: {status_counts['in_production']}",
+                callback_data="in_production"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"🔨 Установка: {status_counts['installation_in_progress']}",
+                callback_data="installation_in_progress"
+            ),
+            InlineKeyboardButton(
+                text=f"👀 На рассмотрении: {status_counts['pending_review']}",
+                callback_data="pending_review"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"📦 Готово к установке: {status_counts['ready_for_installation']}",
+                callback_data="ready_for_installation"
+            ),
+            InlineKeyboardButton(
+                text=f"👷 Назначен работник: {status_counts['worker_assigned']}",
+                callback_data="worker_assigned"
+            )
+        ]
     ]
-
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=buttons,
-    )
-    return keyboard
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-# This is the same keyboard, but created with InlineKeyboardBuilder (preferred way)
-def simple_menu_keyboard():
-    # First, you should create an InlineKeyboardBuilder object
-    keyboard = InlineKeyboardBuilder()
+def create_orders_list_keyboard(
+        orders: List[Dict],
+        current_page: int,
+        total_pages: int,
+        status: str
+) -> InlineKeyboardMarkup:
+    """Create keyboard for orders list with pagination."""
+    buttons = []
 
-    # You can use keyboard.button() method to add buttons, then enter text and callback_data
-    keyboard.button(text="📝 Створити замовлення", callback_data="create_order")
-    keyboard.button(
-        text="📋 Мої замовлення",
-        # In this simple example, we use a string as callback_data
-        callback_data="my_orders",
-    )
+    # Order buttons (2 per row)
+    for i in range(0, len(orders), 2):
+        row = [
+            InlineKeyboardButton(
+                text=f"📋 {orders[i]['order_id']}",
+                callback_data=f"order:{orders[i]['order_id']}"
+            )
+        ]
+        if i + 1 < len(orders):
+            row.append(
+                InlineKeyboardButton(
+                    text=f"📋 {orders[i + 1]['order_id']}",
+                    callback_data=f"order:{orders[i + 1]['order_id']}"
+                )
+            )
+        buttons.append(row)
 
-    # If needed you can use keyboard.adjust() method to change the number of buttons per row
-    # keyboard.adjust(2)
-
-    # Then you should always call keyboard.as_markup() method to get a valid InlineKeyboardMarkup object
-    return keyboard.as_markup()
-
-
-# For a more advanced usage of callback_data, you can use the CallbackData factory
-class OrderCallbackData(CallbackData, prefix="order"):
-    """
-    This class represents a CallbackData object for orders.
-
-    - When used in InlineKeyboardMarkup, you have to create an instance of this class, run .pack() method, and pass to callback_data parameter.
-
-    - When used in InlineKeyboardBuilder, you have to create an instance of this class and pass to callback_data parameter (without .pack() method).
-
-    - In handlers you have to import this class and use it as a filter for callback query handlers, and then unpack callback_data parameter to get the data.
-
-    # Example usage in simple_menu.py
-    """
-
-    order_id: int
-
-
-def my_orders_keyboard(orders: list):
-    # Here we use a list of orders as a parameter (from simple_menu.py)
-
-    keyboard = InlineKeyboardBuilder()
-    for order in orders:
-        keyboard.button(
-            text=f"📝 {order['title']}",
-            # Here we use an instance of OrderCallbackData class as callback_data parameter
-            # order id is the field in OrderCallbackData class, that we defined above
-            callback_data=OrderCallbackData(order_id=order["id"]),
+    # Pagination row
+    pagination_row = []
+    if current_page > 1:
+        pagination_row.append(
+            InlineKeyboardButton(
+                text="⬅️ Предыдущая",
+                callback_data=f"{status}:prev:{current_page - 1}"
+            )
         )
 
-    return keyboard.as_markup()
+    pagination_row.append(
+        InlineKeyboardButton(
+            text=f"📄 {current_page}/{total_pages}",
+            callback_data="current_page"
+        )
+    )
+
+    if current_page < total_pages:
+        pagination_row.append(
+            InlineKeyboardButton(
+                text="➡️ Следующая",
+                callback_data=f"{status}:next:{current_page + 1}"
+            )
+        )
+
+    buttons.append(pagination_row)
+
+    # Back button
+    buttons.append([
+        InlineKeyboardButton(
+            text="🔙 Назад к статистике",
+            callback_data="back_to_stats"
+        )
+    ])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

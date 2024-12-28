@@ -18,7 +18,7 @@ class APIClient:
             params = {"page": page} if page > 1 else {}
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.url}api/orders/status/{order_status}/", params=params
+                        f"{self.url}api/orders/status/{order_status}/", params=params
                 ) as response:
                     return await response.json()
         except Exception as e:
@@ -28,6 +28,15 @@ class APIClient:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{self.url}api/orders/{order_id}/") as response:
+                    return await response.json()
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def get_workers(self, page: int = 1):
+        try:
+            params = {"page": page} if page > 1 else {}
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self.url}api/workers/", params=params) as response:
                     return await response.json()
         except Exception as e:
             return {"error": str(e)}
