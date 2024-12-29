@@ -33,6 +33,9 @@ async def get_workers_list(message: Message,state: FSMContext):
 
     except Exception as e:
         await message.reply(f"❌ Ошибка при получении списка мастеров: {str(e)}")
+    
+
+
 
 
 @workers_router.callback_query(F.data.startswith("workers"))

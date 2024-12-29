@@ -166,6 +166,28 @@ async def get_order_list_by_status(callback_query: CallbackQuery,state: FSMConte
         await callback_query.answer()
 
 
+@orders_router.message(F.text.regexp(r'^[A-ZА-Я]{3}-\d{4}-\d{4}$'))
+async def get_order_by_id(message: Message):
+    """Handle direct order ID input in format 'MAR-1201-0001' or 'МАР-1201-0001'."""
+    try:
+        order_id = message.text
+        api_client = APIClient()
+        order = await api_client.get_order_detail(order_id)
+
+        if "error" in order:
+            await message.answer(f"❌ Заказ не найден или произошла ошибка: {order['error']}")
+            return
+
+        # Format order details using the utility function
+        response = format_order_detail(order)
+        
+        await message.answer(
+            response,
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+        await message.answer(f"❌ Ошибка при получении информации о заказе: {str(e)}")
 
 
 # Common utility for both orders and workers

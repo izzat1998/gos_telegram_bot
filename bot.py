@@ -129,7 +129,7 @@ async def main():
 
     # Set webhook URL
     await bot.set_webhook(
-        url="https://bot.khamraev.uz/bot",
+        url="https://2268-213-230-118-45.ngrok-free.app/bot",
         secret_token="your_secret_token",
         drop_pending_updates=True,
     )
