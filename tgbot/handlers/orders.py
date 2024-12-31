@@ -13,22 +13,17 @@ from tgbot.utils import format_order_detail, ITEMS_PER_PAGE, ORDER_STATUS
 orders_router = Router()
 
 
-@orders_router.message(F.text == "📊 Статистика заказов")
-async def get_order_statistics(message: Message, state: FSMContext):
+@orders_router.message(F.text == "📋 Заказы")
+async def handle_order_statistics_request(message: Message, state: FSMContext):
     """Handle order statistics request."""
     api_client = APIClient()
     try:
         statistics = await api_client.get_order_statistics()
         status_dist = statistics["status_distribution"]
-        finance = statistics["finance_stats"]
         status_counts = {item["status"]: item["count"] for item in status_dist}
 
-        response = (
-            "📈 <b>Финансовая статистика</b>\n"
-            f"💰 Общая выручка: {finance['total_revenue']}$\n"
-            f"📦 Всего заказов: {finance['total_orders']}\n"
-            f"💎 Средний чек: {finance['avg_order_value']}$\n\n"
-        )
+        response = "📊 <b>Статистика заказов по статусам:</b>\n\n"
+
 
         keyboard = create_statistics_keyboard(status_counts)
         await state.set_state(OrderStatistics.list_by_status)
@@ -51,16 +46,8 @@ async def back_to_statistics(callback_query: CallbackQuery, state: FSMContext):
     try:
         statistics = await api_client.get_order_statistics()
         status_dist = statistics["status_distribution"]
-        finance = statistics["finance_stats"]
         status_counts = {item["status"]: item["count"] for item in status_dist}
-
-        response = (
-            "📈 <b>Финансовая статистика</b>\n"
-            f"💰 Общая выручка: {finance['total_revenue']}$\n"
-            f"📦 Всего заказов: {finance['total_orders']}\n"
-            f"💎 Средний чек: {finance['avg_order_value']}$\n\n"
-        )
-
+        response = "📊 <b>Статистика заказов по статусам:</b>\n\n"
         keyboard = create_statistics_keyboard(status_counts)
         await state.set_state(OrderStatistics.list_by_status)
         await callback_query.message.edit_text(

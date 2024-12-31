@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from aiogram.filters.callback_data import CallbackData
+
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 
 
 # This is a simple keyboard, that contains 2 buttons
@@ -148,5 +148,52 @@ def create_orders_list_keyboard(
             callback_data="back_to_stats"
         )
     ])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+# Callback data prefixes
+SPECIALIZATION_PREFIX = "spec"
+PAGINATION_PREFIX = "workers"
+
+# Callback actions
+ACTION_ALL = "all"
+ACTION_BACK = "back"
+
+def create_specialization_inline_keyboard(specializations: List[Dict]) -> InlineKeyboardMarkup:
+    """
+    Create inline keyboard for specializations list.
+    
+    Args:
+        specializations: List of specialization dictionaries with 'name' and 'slug' keys
+        
+    Returns:
+        InlineKeyboardMarkup: Keyboard with specialization buttons
+    """
+    buttons = []
+    
+    # Add "All Masters" button
+    buttons.append([InlineKeyboardButton(
+        text="👥 Все Мастера",
+        callback_data=f"{SPECIALIZATION_PREFIX}:{ACTION_ALL}"
+    )])
+    
+    # Add specialization buttons in pairs
+    spec_buttons = []
+    for spec in specializations:
+        spec_buttons.append(InlineKeyboardButton(
+            text=f"👤 {spec['name']}",
+            callback_data=f"{SPECIALIZATION_PREFIX}:{spec['slug']}"
+        ))
+        
+        # Add row after every 2 buttons
+        if len(spec_buttons) == 2:
+            buttons.append(spec_buttons)
+            spec_buttons = []
+    
+    # Add remaining buttons if any
+    if spec_buttons:
+        buttons.append(spec_buttons)
+
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
