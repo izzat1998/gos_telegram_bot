@@ -152,6 +152,16 @@ def create_orders_list_keyboard(
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+def type_of_worker_keyboard() -> InlineKeyboardMarkup:
+    """Create inline keyboard for worker type selection."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="👨‍🔧 Мастера", callback_data="workers")],
+            [InlineKeyboardButton(text="👨‍🔧 Верифицированные мастера ", callback_data="verified_workers")],
+        ]
+    )
+
+
 # Callback data prefixes
 SPECIALIZATION_PREFIX = "spec"
 PAGINATION_PREFIX = "workers"
@@ -171,7 +181,6 @@ def create_specialization_inline_keyboard(specializations: List[Dict]) -> Inline
         InlineKeyboardMarkup: Keyboard with specialization buttons
     """
     buttons = []
-    
     # Add "All Masters" button
     buttons.append([InlineKeyboardButton(
         text="👥 Все Мастера",

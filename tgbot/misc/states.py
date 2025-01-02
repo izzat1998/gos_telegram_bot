@@ -5,6 +5,9 @@ class OrderStatistics(StatesGroup):
     list_by_status = State()
     detail = State()
 
+
 class Workers(StatesGroup):
-    list = State()
+    type_of_worker = State()
     specialization = State()
+
+

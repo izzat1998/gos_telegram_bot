@@ -6,9 +6,11 @@ from tgbot.api.order import APIClient
 from tgbot.keyboards.inline import (
     create_pagination_keyboard,
     create_specialization_inline_keyboard,
+    type_of_worker_keyboard,
     SPECIALIZATION_PREFIX, 
     PAGINATION_PREFIX,
     ACTION_ALL,
+
 )
 
 from tgbot.utils import ITEMS_PER_PAGE, format_worker_list
@@ -26,18 +28,21 @@ async def handle_api_error(message_or_callback, error: Exception) -> None:
         await message_or_callback.reply(error_msg)
 
 @workers_router.message(F.text == "👨‍🔧 Мастера")
-async def get_specializations(message: Message, state: FSMContext):
-    """Handle initial request for specializations list."""
-    await state.clear()
+async def get_type_of_workers(message: Message, state: FSMContext):
+    await state.set_state(Workers.type_of_worker)
+    await message.reply("👨‍🔧 Выберите тип мастера:", reply_markup=type_of_worker_keyboard())
+
+@workers_router.callback_query(Workers.type_of_worker)
+async def get_specializations_for_workers(callback_query: CallbackQuery, state: FSMContext):
     await state.set_state(Workers.specialization)
-    
+    await state.update_data(type_of_worker=callback_query.data)
     try:
         api_client = APIClient()
         response = await api_client.get_specializations()
         specializations = response.get("results", [])
         
         if not specializations:
-            await message.reply("❌ Список специализаций пуст")
+            await callback_query.message.reply("❌ Список специализаций пуст")
             return
         
         # Store specializations in state
@@ -45,24 +50,40 @@ async def get_specializations(message: Message, state: FSMContext):
         await state.update_data(specializations_map=specializations_map)
 
         keyboard = create_specialization_inline_keyboard(specializations)
-        await message.reply("👨‍🔧 Выберите специализацию:", reply_markup=keyboard)
+        await callback_query.message.reply("👨‍🔧 Выберите специализацию:", reply_markup=keyboard)
         
     except Exception as e:
-        await handle_api_error(message, e)
+        await handle_api_error(callback_query.message, e)
 
-@workers_router.callback_query(F.data.startswith(f"{SPECIALIZATION_PREFIX}:"))
+
+
+
+
+
+
+
+
+
+@workers_router.callback_query(F.data.startswith(f"{SPECIALIZATION_PREFIX}:"), Workers.specialization)
 async def handle_specialization_selection(callback: CallbackQuery, state: FSMContext):
     """Handle specialization selection from inline keyboard."""
     action = callback.data.split(":")[1]
     try:
         api_client = APIClient()
-        
+        worker_type = await state.get_data()
         if action == ACTION_ALL:
-            response = await api_client.get_workers(page=1)
+            if worker_type['type_of_worker'] == 'verified_workers':
+                response = await api_client.get_verified_workers(page=1)
+            else:
+                response = await api_client.get_workers(page=1)
             header = "👥 Все Мастера\n\n"
             await state.update_data(specialization=ACTION_ALL)
         else:
-            response = await api_client.get_workers_by_specialization(action, page=1)
+
+            if worker_type['type_of_worker'] == 'verified_workers':
+                response = await api_client.get_verified_workers_by_specialization(action, page=1)
+            else:
+                response = await api_client.get_workers_by_specialization(action, page=1)
             state_data = await state.get_data()
             specializations_map = state_data.get('specializations_map', {})
             specialization_name = next(
